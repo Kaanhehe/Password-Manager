@@ -197,6 +197,8 @@ class PasswordGenerator(QWidget):
         # Convert the password list to a string
         password = "".join(password)
 
+        return password
+
     def generate(self): # The password generation is a little complicated to ensure there is at least one character from each selected group
         password_length = self.length_slider.value()
 
