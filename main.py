@@ -1,28 +1,3 @@
-#Password Generator with Tkinter
-#Features:
-#User Interface:
-#
-#Use Tkinter, a standard GUI toolkit for Python, to create a graphical interface.
-#Include input fields for password length and checkboxes for including/excluding numbers, symbols, uppercase, and lowercase letters.
-#Display the generated password in a text box.
-#Add a "Copy to Clipboard" button to easily copy the generated password.
-#Password Generation Logic:
-#
-#Implement a password generation function that takes user preferences into account.
-#Use the secrets module to generate cryptographically secure random numbers.
-#Combine characters based on user preferences and generate the final password.
-#User Preferences:
-#
-#Allow users to specify the length of the password.
-#Include checkboxes or toggle buttons for:
-#Include numbers (0-9)
-#Include symbols (!@#$%^&*)
-#Include uppercase letters (A-Z)
-#Include lowercase letters (a-z)
-#Copy to Clipboard:
-#
-#Utilize the pyperclip module to copy the generated password to the clipboard.
-#Provide a visual indication or a popup message confirming the successful copy.
 #Clean and Responsive Design:
 #
 #Create a clean and user-friendly design for the GUI.
@@ -31,14 +6,6 @@
 #
 #Implement error handling to manage scenarios like invalid input or password generation failure.
 #Provide informative messages to guide the user in case of errors.
-#README File:
-#
-#Write a comprehensive README file that explains the project, its features, and how to use it.
-#Include any dependencies and installation instructions.
-#Code Comments and Documentation:
-#
-#Add comments in your code to explain complex logic or functionality.
-#Consider writing a brief documentation to help other developers understand your code.
 #Optional Enhancements:
 #Password Strength Indicator:
 #
@@ -46,9 +13,6 @@
 #History:
 #
 #Include a section to display the history of generated passwords.
-#Settings Persistence:
-#
-#Allow users to save their preferred settings, so they don't need to set them every time.
 #Unit Testing:
 #
 #Write unit tests for the password generation logic to ensure its correctness.
@@ -60,7 +24,7 @@ import pyperclip
 import secrets
 from PyQt5.QtWidgets import QApplication, QWidget, QVBoxLayout, QPushButton, QTextEdit, QSlider, QLabel, QMessageBox, QCheckBox
 from PyQt5.QtGui import QTextCharFormat, QColor, QPalette
-from PyQt5.QtCore import Qt
+from PyQt5.QtCore import Qt, QSettings
 
 default_password_length = 15
 colors = {
@@ -72,6 +36,9 @@ colors = {
 class PasswordGenerator(QWidget):
     def __init__(self):
         super().__init__()
+
+        # Create a QSettings object
+        self.settings = QSettings("Kaanhehe", "Password Generator")
 
         self.initUI()
 
@@ -90,11 +57,18 @@ class PasswordGenerator(QWidget):
         self.password_label.setStyleSheet("font-size: 20px;")
         self.layout.addWidget(self.password_label) # Add the password label to the layout
 
+
         self.generate_password_options()
         self.generate_buttons()
 
+        # Load the state of the checkboxes and slider from the settings
+        self.uppercase_checkbox.setChecked(self.settings.value("uppercase", True, type=bool))
+        self.lowercase_checkbox.setChecked(self.settings.value("lowercase", True, type=bool))
+        self.numbers_checkbox.setChecked(self.settings.value("numbers", True, type=bool))
+        self.symbols_checkbox.setChecked(self.settings.value("symbols", True, type=bool))
+        self.length_slider.setValue(self.settings.value("length", default_password_length, type=int))
+
         # Set the initial state of the widgets
-        self.length_slider.setValue(default_password_length) # Set the initial value of the length_slider
         self.updateSliderValue() # Update the length_slider value label
         self.generate()  # Generate an initial password
 
@@ -125,19 +99,16 @@ class PasswordGenerator(QWidget):
 
         # Uppercase checkbox
         self.uppercase_checkbox = QCheckBox("A-Z")
-        self.uppercase_checkbox.setChecked(True)
         self.uppercase_checkbox.stateChanged.connect(self.generate) # Generate a new password when the checkbox is checked/unchecked
         self.layout.addWidget(self.uppercase_checkbox)
 
         # Lowercase checkbox
         self.lowercase_checkbox = QCheckBox("a-z")
-        self.lowercase_checkbox.setChecked(True)
         self.lowercase_checkbox.stateChanged.connect(self.generate) # Generate a new password when the checkbox is checked/unchecked 
         self.layout.addWidget(self.lowercase_checkbox)
 
         # Numbers checkbox
         self.numbers_checkbox = QCheckBox("0-9")
-        self.numbers_checkbox.setChecked(True)
         self.numbers_checkbox.stateChanged.connect(self.generate) # Generate a new password when the checkbox is checked/unchecked
         self.layout.addWidget(self.numbers_checkbox)
 
@@ -244,6 +215,16 @@ class PasswordGenerator(QWidget):
     def clear(self):
         self.password_label.clear()
         self.length_slider.setValue(default_password_length)
+
+    def closeEvent(self, event):
+        # Save the state of the checkboxes
+        self.settings.setValue("length", self.length_slider.value())
+        self.settings.setValue("uppercase", self.uppercase_checkbox.isChecked())
+        self.settings.setValue("lowercase", self.lowercase_checkbox.isChecked())
+        self.settings.setValue("numbers", self.numbers_checkbox.isChecked())
+        self.settings.setValue("symbols", self.symbols_checkbox.isChecked())
+
+        super().closeEvent(event)
 
 # Create the application
 app = QApplication([])
