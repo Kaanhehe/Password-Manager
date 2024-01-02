@@ -54,51 +54,153 @@
 #Write unit tests for the password generation logic to ensure its correctness.
 
 # Importing modules
-from tkinter import *
-from tkinter import messagebox
 import random
 import string
 import pyperclip
+from PyQt5.QtWidgets import QApplication, QWidget, QVBoxLayout, QPushButton, QTextEdit, QSlider, QLabel, QMessageBox, QCheckBox
+from PyQt5.QtGui import QTextCharFormat, QColor, QPalette
+from PyQt5.QtCore import Qt
 
-# Setting up the window
-root = Tk()
-root.geometry("400x400")
-root.resizable(0, 0)
-root.title("Password Generator")
-root.config(bg="lightblue")
+default_password_length = 15
 
-# Defining variables
-pass_str = StringVar()
-pass_len = IntVar()
-pass_len.set(0)
-pass_str.set("")
+class PasswordGenerator(QWidget):
+    def __init__(self):
+        super().__init__()
 
-# Defining functions
-def generate():
-    if pass_len.get() == 0:
-        messagebox.showerror("Error", "Please enter a password length")
-    else:
-        password = ""
-        for x in range(pass_len.get()):
-            password = password + random.choice(string.ascii_letters + string.digits + string.punctuation)
-        pass_str.set(password)
+        self.initUI()
 
-def copy():
-    pyperclip.copy(pass_str.get())
-    messagebox.showinfo("Success", "Password copied to clipboard")
+    def initUI(self):
+        self.setWindowTitle('Password Generator')
 
-def clear():
-    pass_str.set("")
-    pass_len.set(0)
+        self.layout = QVBoxLayout()
+        self.setLayout(self.layout)
 
-# Creating the GUI
-Label(root, text="Password Generator", font="arial 15 bold").pack()
-Label(root, text="Enter password length", font="arial 10 bold").pack(pady=10)
-Entry(root, textvariable=pass_len, width=20).pack(pady=10)
-Button(root, text="Generate Password", command=generate).pack(pady=10)
-Entry(root, textvariable=pass_str, width=20).pack(pady=10)
-Button(root, text="Copy to Clipboard", command=copy).pack(pady=10)
-Button(root, text="Clear", command=clear).pack(pady=10)
+        self.label = QLabel("Enter password length")
+        self.layout.addWidget(self.label)
 
-# Running the mainloop
-root.mainloop()
+        self.length_slider = QSlider(Qt.Horizontal)
+        self.length_slider.setMinimum(5)
+        self.length_slider.setMaximum(128)
+        self.length_slider.valueChanged.connect(self.updateSliderValue)
+        self.length_slider.valueChanged.connect(self.generate)  # Connect the valueChanged signal to the generate slot
+        self.layout.addWidget(self.length_slider)
+
+        self.slider_value_label = QLabel()
+        self.layout.addWidget(self.slider_value_label)
+
+        self.uppercase_checkbox = QCheckBox("Include Uppercase Letters")
+        self.uppercase_checkbox.setChecked(True)
+        self.uppercase_checkbox.stateChanged.connect(self.generate)  # Connect the stateChanged signal to the generate slot
+        self.layout.addWidget(self.uppercase_checkbox)
+
+        self.lowercase_checkbox = QCheckBox("Include Lowercase Letters")
+        self.lowercase_checkbox.setChecked(True)
+        self.lowercase_checkbox.stateChanged.connect(self.generate)  # Connect the stateChanged signal to the generate slot
+        self.layout.addWidget(self.lowercase_checkbox)
+
+        self.numbers_checkbox = QCheckBox("Include Numbers")
+        self.numbers_checkbox.setChecked(True)
+        self.numbers_checkbox.stateChanged.connect(self.generate)  # Connect the stateChanged signal to the generate slot
+        self.layout.addWidget(self.numbers_checkbox)
+
+        self.symbols_checkbox = QCheckBox("Include Symbols")
+        self.symbols_checkbox.stateChanged.connect(self.generate)  # Connect the stateChanged signal to the generate slot
+        self.layout.addWidget(self.symbols_checkbox)
+
+        self.generate_button = QPushButton("Generate Password")
+        self.generate_button.clicked.connect(self.generate)
+        self.layout.addWidget(self.generate_button)
+
+        self.password_label = QTextEdit()
+        self.password_label.setReadOnly(True)
+        self.password_label.setPlaceholderText("Your generated password will appear here")
+        self.password_label.setStyleSheet("font-size: 20px;")
+        self.password_label.setAlignment(Qt.AlignCenter)
+        self.layout.addWidget(self.password_label)
+
+        self.copy_button = QPushButton("Copy to Clipboard")
+        self.copy_button.clicked.connect(self.copy)
+        self.layout.addWidget(self.copy_button)
+
+        self.clear_button = QPushButton("Clear")
+        self.clear_button.clicked.connect(self.clear)
+        self.layout.addWidget(self.clear_button)
+
+        self.length_slider.setValue(default_password_length) # Set the initial value of the length_slider
+        self.updateSliderValue() # Update the length_slider value label
+        self.generate()  # Generate an initial password
+
+    def updateSliderValue(self):
+        value = self.length_slider.value()
+        self.slider_value_label.setText(f"Slider Value: {value}")
+
+    def generate(self):
+        password_length = self.length_slider.value()
+
+        # Create a string of the selected character types
+        characters = ""
+        if self.uppercase_checkbox.isChecked():
+            characters += string.ascii_uppercase
+        if self.lowercase_checkbox.isChecked():
+            characters += string.ascii_lowercase
+        if self.numbers_checkbox.isChecked():
+            characters += string.digits
+        if self.symbols_checkbox.isChecked():
+            characters += "@#$%^&*" # Not using string.punctuation because it contains some characters that could cause issues and no puctuation cause its treated like a end of sentence (goes to next line)
+
+        # If no character types are selected, show an error message
+        if not characters:
+            QMessageBox.warning(self, "Warning", "Please select at least one type of characters")
+            return
+
+        # Generate the password
+        password = [random.choice(characters) for _ in range(password_length)]
+        
+        # Clear the QTextEdit
+        self.password_label.clear()
+
+        # Create QTextCharFormat objects for each type of character
+        letter_format = QTextCharFormat()
+        letter_format.setForeground(QColor("white"))
+        number_format = QTextCharFormat()
+        number_format.setForeground(QColor("#6f9df1"))
+        symbol_format = QTextCharFormat()
+        symbol_format.setForeground(QColor("#e3826f"))
+
+        # Insert the password characters into the QTextEdit with the appropriate formatting
+        cursor = self.password_label.textCursor()
+        for char in password:
+            if char in string.ascii_letters:
+                cursor.insertText(char, letter_format)
+            elif char in string.digits:
+                cursor.insertText(char, number_format)
+            else:
+                cursor.insertText(char, symbol_format)
+
+    def copy(self):
+        password = self.password_label.toPlainText()
+        pyperclip.copy(password)
+
+    def clear(self):
+        self.password_label.clear()
+        self.length_slider.setValue(default_password_length)
+
+app = QApplication([])
+app.setStyle("Fusion")
+# Create a palette
+palette = QPalette()
+palette.setColor(QPalette.Window, QColor(24, 28, 36)) # Darker background color
+palette.setColor(QPalette.WindowText, QColor(255,255,255)) # Text color
+palette.setColor(QPalette.Base, QColor(48,52,60)) # Lighter background color
+palette.setColor(QPalette.AlternateBase, QColor(53,57,65)) # Alternate background color (I dont know what this is used for)
+palette.setColor(QPalette.Button, QColor(48,52,60)) # Button background color
+palette.setColor(QPalette.ButtonText, QColor(255,255,255)) # Button text color
+
+# Set the palette for the application
+app.setPalette(palette)
+
+
+
+window = PasswordGenerator()
+window.show()
+app.exec_()
