@@ -57,11 +57,17 @@
 import random
 import string
 import pyperclip
+import secrets
 from PyQt5.QtWidgets import QApplication, QWidget, QVBoxLayout, QPushButton, QTextEdit, QSlider, QLabel, QMessageBox, QCheckBox
 from PyQt5.QtGui import QTextCharFormat, QColor, QPalette
 from PyQt5.QtCore import Qt
 
 default_password_length = 15
+colors = {
+    "symbols" : "#c95740",
+    "numbers" : "#6f9df1",
+    "letters" : "white"
+}
 
 class PasswordGenerator(QWidget):
     def __init__(self):
@@ -70,104 +76,156 @@ class PasswordGenerator(QWidget):
         self.initUI()
 
     def initUI(self):
+        # Set the window title
         self.setWindowTitle('Password Generator')
-
+        
+        # Set the window size
         self.layout = QVBoxLayout()
         self.setLayout(self.layout)
 
-        self.label = QLabel("Enter password length")
-        self.layout.addWidget(self.label)
-
-        self.length_slider = QSlider(Qt.Horizontal)
-        self.length_slider.setMinimum(5)
-        self.length_slider.setMaximum(128)
-        self.length_slider.valueChanged.connect(self.updateSliderValue)
-        self.length_slider.valueChanged.connect(self.generate)  # Connect the valueChanged signal to the generate slot
-        self.layout.addWidget(self.length_slider)
-
-        self.slider_value_label = QLabel()
-        self.layout.addWidget(self.slider_value_label)
-
-        self.uppercase_checkbox = QCheckBox("Include Uppercase Letters")
-        self.uppercase_checkbox.setChecked(True)
-        self.uppercase_checkbox.stateChanged.connect(self.generate)  # Connect the stateChanged signal to the generate slot
-        self.layout.addWidget(self.uppercase_checkbox)
-
-        self.lowercase_checkbox = QCheckBox("Include Lowercase Letters")
-        self.lowercase_checkbox.setChecked(True)
-        self.lowercase_checkbox.stateChanged.connect(self.generate)  # Connect the stateChanged signal to the generate slot
-        self.layout.addWidget(self.lowercase_checkbox)
-
-        self.numbers_checkbox = QCheckBox("Include Numbers")
-        self.numbers_checkbox.setChecked(True)
-        self.numbers_checkbox.stateChanged.connect(self.generate)  # Connect the stateChanged signal to the generate slot
-        self.layout.addWidget(self.numbers_checkbox)
-
-        self.symbols_checkbox = QCheckBox("Include Symbols")
-        self.symbols_checkbox.stateChanged.connect(self.generate)  # Connect the stateChanged signal to the generate slot
-        self.layout.addWidget(self.symbols_checkbox)
-
-        self.generate_button = QPushButton("Generate Password")
-        self.generate_button.clicked.connect(self.generate)
-        self.layout.addWidget(self.generate_button)
-
+        # Password label
         self.password_label = QTextEdit()
-        self.password_label.setReadOnly(True)
-        self.password_label.setPlaceholderText("Your generated password will appear here")
+        self.password_label.setReadOnly(True) # Make the password label read-only
+        self.password_label.setPlaceholderText("Das Passwort wird hier angezeigt")
         self.password_label.setStyleSheet("font-size: 20px;")
-        self.password_label.setAlignment(Qt.AlignCenter)
-        self.layout.addWidget(self.password_label)
+        self.layout.addWidget(self.password_label) # Add the password label to the layout
 
-        self.copy_button = QPushButton("Copy to Clipboard")
-        self.copy_button.clicked.connect(self.copy)
-        self.layout.addWidget(self.copy_button)
+        self.generate_password_options()
+        self.generate_buttons()
 
-        self.clear_button = QPushButton("Clear")
-        self.clear_button.clicked.connect(self.clear)
-        self.layout.addWidget(self.clear_button)
-
+        # Set the initial state of the widgets
         self.length_slider.setValue(default_password_length) # Set the initial value of the length_slider
         self.updateSliderValue() # Update the length_slider value label
         self.generate()  # Generate an initial password
 
+    def generate_password_options(self):
+        #! -- Widgets for the password generation options -- !#
+            
+        # - Passwortlänge - #
+        # Passwortlänge label
+        self.label = QLabel("Passwortlänge")
+        self.layout.addWidget(self.label)
+
+        # Passwortlänge slider
+        self.length_slider = QSlider(Qt.Horizontal)
+        self.length_slider.setMinimum(5)
+        self.length_slider.setMaximum(128)
+        self.length_slider.valueChanged.connect(self.updateSliderValue) # Update the length_slider value label when the slider is moved
+        self.length_slider.valueChanged.connect(self.generate) # Generate a new password when the slider is moved
+        self.layout.addWidget(self.length_slider)
+
+        # Passwortlänge slider value label
+        self.slider_value_label = QLabel()
+        self.layout.addWidget(self.slider_value_label)
+
+        # - Zeichenarten Checkboxes - #
+        # Zeichenarten label
+        self.charlabel = QLabel("Zeichenarten")
+        self.layout.addWidget(self.charlabel)
+
+        # Uppercase checkbox
+        self.uppercase_checkbox = QCheckBox("A-Z")
+        self.uppercase_checkbox.setChecked(True)
+        self.uppercase_checkbox.stateChanged.connect(self.generate) # Generate a new password when the checkbox is checked/unchecked
+        self.layout.addWidget(self.uppercase_checkbox)
+
+        # Lowercase checkbox
+        self.lowercase_checkbox = QCheckBox("a-z")
+        self.lowercase_checkbox.setChecked(True)
+        self.lowercase_checkbox.stateChanged.connect(self.generate) # Generate a new password when the checkbox is checked/unchecked 
+        self.layout.addWidget(self.lowercase_checkbox)
+
+        # Numbers checkbox
+        self.numbers_checkbox = QCheckBox("0-9")
+        self.numbers_checkbox.setChecked(True)
+        self.numbers_checkbox.stateChanged.connect(self.generate) # Generate a new password when the checkbox is checked/unchecked
+        self.layout.addWidget(self.numbers_checkbox)
+
+        # Symbols checkbox
+        self.symbols_checkbox = QCheckBox("@#$%^&*")
+        self.symbols_checkbox.stateChanged.connect(self.generate) # Generate a new password when the checkbox is checked/unchecked
+        self.layout.addWidget(self.symbols_checkbox)
+        
+    def generate_buttons(self):
+        #! -- Buttons -- !#
+        # regenerate button
+        self.generate_button = QPushButton("Passwort neu generieren")
+        self.generate_button.clicked.connect(self.generate) # Generate a new password when the button is clicked
+        self.layout.addWidget(self.generate_button)
+
+        # copy button
+        self.copy_button = QPushButton("Passwort kopieren")
+        self.copy_button.clicked.connect(self.copy)
+        self.layout.addWidget(self.copy_button)
+
+        # clear button
+        self.clear_button = QPushButton("Passwort löschen")
+        self.clear_button.clicked.connect(self.clear)
+        self.layout.addWidget(self.clear_button)
+
     def updateSliderValue(self):
         value = self.length_slider.value()
-        self.slider_value_label.setText(f"Slider Value: {value}")
+        self.slider_value_label.setText(f"Passwortlänge: {value}")
 
-    def generate(self):
+    def getcharacters(self):
+        # Get the selected character types
+        character_groups = []
+        if self.uppercase_checkbox.isChecked():
+            character_groups.append(string.ascii_uppercase)
+        if self.lowercase_checkbox.isChecked():
+            character_groups.append(string.ascii_lowercase)
+        if self.numbers_checkbox.isChecked():
+            character_groups.append(string.digits)
+        if self.symbols_checkbox.isChecked():
+            character_groups.append("@#$%^&*")
+        
+        return character_groups
+    
+    def generatepassword(self, password_length, character_groups):
+        # Generate the password
+        password = []
+        # First, add one character from each group
+        for group in character_groups:
+            password.append(secrets.choice(group))
+        # Then, fill the rest of the password with characters from all groups
+        all_characters = "".join(character_groups)
+        password += (secrets.choice(all_characters) for _ in range(password_length - len(character_groups)))
+
+        # Shuffle the password to ensure the characters from different groups are not clumped together
+        random.shuffle(password)
+
+        # Convert the password list to a string
+        password = "".join(password)
+
+    def generate(self): # The password generation is a little complicated to ensure there is at least one character from each selected group
         password_length = self.length_slider.value()
 
-        # Create a string of the selected character types
-        characters = ""
-        if self.uppercase_checkbox.isChecked():
-            characters += string.ascii_uppercase
-        if self.lowercase_checkbox.isChecked():
-            characters += string.ascii_lowercase
-        if self.numbers_checkbox.isChecked():
-            characters += string.digits
-        if self.symbols_checkbox.isChecked():
-            characters += "@#$%^&*" # Not using string.punctuation because it contains some characters that could cause issues and no puctuation cause its treated like a end of sentence (goes to next line)
+        character_groups = self.getcharacters()
 
-        # If no character types are selected, show an error message
-        if not characters:
+        # Ensure at least one character group is selected
+        if not character_groups:
             QMessageBox.warning(self, "Warning", "Please select at least one type of characters")
             return
 
-        # Generate the password
-        password = [random.choice(characters) for _ in range(password_length)]
-        
-        # Clear the QTextEdit
+        # Ensure the password length is at least the number of character groups
+        if password_length < len(character_groups):
+            QMessageBox.warning(self, "Warning", "Password length must be at least the number of selected character types")
+            return
+
+        password = self.generatepassword(password_length, character_groups)
+
+        # Clear the password label
         self.password_label.clear()
 
-        # Create QTextCharFormat objects for each type of character
+        # Set the password label's text colors
         letter_format = QTextCharFormat()
-        letter_format.setForeground(QColor("white"))
+        letter_format.setForeground(QColor(colors["letters"]))
         number_format = QTextCharFormat()
-        number_format.setForeground(QColor("#6f9df1"))
+        number_format.setForeground(QColor(colors["numbers"]))
         symbol_format = QTextCharFormat()
-        symbol_format.setForeground(QColor("#e3826f"))
+        symbol_format.setForeground(QColor(colors["symbols"]))
 
-        # Insert the password characters into the QTextEdit with the appropriate formatting
+        # Insert the password characters into the password label with the correct colors
         cursor = self.password_label.textCursor()
         for char in password:
             if char in string.ascii_letters:
@@ -185,9 +243,11 @@ class PasswordGenerator(QWidget):
         self.password_label.clear()
         self.length_slider.setValue(default_password_length)
 
+# Create the application
 app = QApplication([])
 app.setStyle("Fusion")
-# Create a palette
+
+# Create the palette for the application
 palette = QPalette()
 palette.setColor(QPalette.Window, QColor(24, 28, 36)) # Darker background color
 palette.setColor(QPalette.WindowText, QColor(255,255,255)) # Text color
@@ -199,8 +259,7 @@ palette.setColor(QPalette.ButtonText, QColor(255,255,255)) # Button text color
 # Set the palette for the application
 app.setPalette(palette)
 
-
-
+# Create the application window
 window = PasswordGenerator()
 window.show()
 app.exec_()
