@@ -1,0 +1,7 @@
+PyQt5
+pytest
+pytest-qt
+random
+secrets
+pyperclip
+string
