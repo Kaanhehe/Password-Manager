@@ -10,9 +10,6 @@
 #Password Strength Indicator:
 #
 #Implement a visual indicator of password strength based on the generated password's complexity.
-#Unit Testing:
-#
-#Write unit tests for the password generation logic to ensure its correctness.
 
 # Importing modules
 import random
