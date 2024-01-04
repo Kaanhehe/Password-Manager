@@ -3,6 +3,10 @@ import string
 from PyQt5.QtWidgets import QApplication
 from main import PasswordGenerator
 
+@pytest.fixture(scope='session')
+def qapp():
+    return QApplication([])
+
 @pytest.fixture
 def app(qapp, request):
     return PasswordGenerator()
