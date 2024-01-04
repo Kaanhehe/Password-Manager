@@ -15,7 +15,7 @@ from zxcvbn import zxcvbn
 import re
 from PyQt5.QtWidgets import QApplication, QWidget, QVBoxLayout, QPushButton, QTextEdit, QSlider, QLabel, QMessageBox, QCheckBox, QProgressBar
 from PyQt5.QtGui import QTextCharFormat, QColor, QPalette
-from PyQt5.QtCore import Qt, QSettings
+from PyQt5.QtCore import Qt, QSettings, QRect, QPoint, QSize
 
 default_password_length = 15
 colors = {
@@ -73,12 +73,14 @@ class PasswordGenerator(QWidget):
         # Set the window size
         self.layout = QVBoxLayout()
         self.setLayout(self.layout)
+        self.setFixedSize(350, 500)
 
         # Password label
         self.password_label = QTextEdit()
         self.password_label.setReadOnly(True) # Make the password label read-only
         self.password_label.setPlaceholderText("Das Passwort wird hier angezeigt")
         self.password_label.setStyleSheet("font-size: 20px;")
+        self.password_label.setMaximumWidth(int(self.width() * 0.8))
         self.layout.addWidget(self.password_label) # Add the password label to the layout
 
 
@@ -148,19 +150,19 @@ class PasswordGenerator(QWidget):
     def generate_buttons(self):
         #! -- Buttons -- !#
         # regenerate button
-        self.generate_button = QPushButton("Passwort neu generieren")
+        self.generate_button = QPushButton("Passwort\nneu\ngenerieren", self)
+        self.generate_button.setGeometry(QRect(QPoint(295, 11), QSize(50, 85)))
         self.generate_button.clicked.connect(self.generate) # Generate a new password when the button is clicked
-        self.layout.addWidget(self.generate_button)
 
         # copy button
-        self.copy_button = QPushButton("Passwort kopieren")
-        self.copy_button.clicked.connect(self.copy)
-        self.layout.addWidget(self.copy_button)
+        self.copy_button = QPushButton("Passwort\nkopieren", self)
+        self.copy_button.setGeometry(QRect(QPoint(295, 105), QSize(50, 85)))
+        self.copy_button.clicked.connect(self.copy) # Copy the password to the clipboard when the button is clicked
 
         # clear button
-        self.clear_button = QPushButton("Passwort löschen")
+        self.clear_button = QPushButton("Passwort\nlöschen", self)
+        self.clear_button.setGeometry(QRect(QPoint(295, 199), QSize(50, 85)))
         self.clear_button.clicked.connect(self.clear)
-        self.layout.addWidget(self.clear_button)
 
     def updateSliderValue(self):
         value = self.length_slider.value()
