@@ -239,7 +239,7 @@ palette.setColor(QPalette.ButtonText, QColor(255,255,255)) # Button text color
 # Set the palette for the application
 app.setPalette(palette)
 
-# Create the application window
-window = PasswordGenerator()
-window.show()
-app.exec_()
+if __name__ == "__main__":
+    window = PasswordGenerator()
+    window.show()
+    app.exec_()
