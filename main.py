@@ -6,17 +6,14 @@
 #
 #Implement error handling to manage scenarios like invalid input or password generation failure.
 #Provide informative messages to guide the user in case of errors.
-#Optional Enhancements:
-#Password Strength Indicator:
-#
-#Implement a visual indicator of password strength based on the generated password's complexity.
-
 # Importing modules
 import random
 import string
 import pyperclip
 import secrets
-from PyQt5.QtWidgets import QApplication, QWidget, QVBoxLayout, QPushButton, QTextEdit, QSlider, QLabel, QMessageBox, QCheckBox
+from zxcvbn import zxcvbn
+import re
+from PyQt5.QtWidgets import QApplication, QWidget, QVBoxLayout, QPushButton, QTextEdit, QSlider, QLabel, QMessageBox, QCheckBox, QProgressBar
 from PyQt5.QtGui import QTextCharFormat, QColor, QPalette
 from PyQt5.QtCore import Qt, QSettings
 
@@ -28,6 +25,39 @@ colors = {
 }
 
 class PasswordGenerator(QWidget):
+    """
+    !!!!This Documentation was written by Github Copilot not by me!!!!
+
+    A class that represents a password generator widget.
+
+    Attributes:
+        settings (QSettings): A QSettings object for storing and retrieving settings.
+        password_label (QTextEdit): A QTextEdit widget for displaying the generated password.
+        password_strength_bar (QProgressBar): A QProgressBar widget for displaying the password strength.
+        uppercase_checkbox (QCheckBox): A QCheckBox widget for selecting uppercase characters.
+        lowercase_checkbox (QCheckBox): A QCheckBox widget for selecting lowercase characters.
+        numbers_checkbox (QCheckBox): A QCheckBox widget for selecting numeric characters.
+        symbols_checkbox (QCheckBox): A QCheckBox widget for selecting symbol characters.
+        length_slider (QSlider): A QSlider widget for selecting the length of the password.
+        slider_value_label (QLabel): A QLabel widget for displaying the value of the length slider.
+        generate_button (QPushButton): A QPushButton widget for generating a new password.
+        copy_button (QPushButton): A QPushButton widget for copying the generated password.
+        clear_button (QPushButton): A QPushButton widget for clearing the generated password.
+
+    Methods:
+        initUI(): Initializes the user interface of the password generator widget.
+        generate_password_options(): Creates the widgets for the password generation options.
+        generate_buttons(): Creates the buttons for generating, copying, and clearing the password.
+        updateSliderValue(): Updates the value label of the length slider.
+        getcharacters(): Retrieves the selected character types.
+        generatepassword(password_length, character_groups): Generates a password based on the selected options.
+        calculate_password_strength(password): Calculates the strength of the generated password.
+        generate(): Generates a new password based on the selected options.
+        copy(): Copies the generated password to the clipboard.
+        clear(): Clears the generated password.
+        closeEvent(event): Handles the close event of the password generator widget.
+    """
+        
     def __init__(self):
         super().__init__()
 
@@ -53,6 +83,10 @@ class PasswordGenerator(QWidget):
 
 
         self.generate_password_options()
+
+        self.password_strength_bar = QProgressBar(self)
+        self.layout.addWidget(self.password_strength_bar)
+
         self.generate_buttons()
 
         # Load the state of the checkboxes and slider from the settings
@@ -163,6 +197,34 @@ class PasswordGenerator(QWidget):
         password = "".join(password)
 
         return password
+    
+    def calculate_password_strength(self, password):
+        results = zxcvbn(password)
+        crack_time = results['crack_times_display']['offline_slow_hashing_1e4_per_second']
+
+        # Extract the numeric part from the crack_time
+        numeric_part = re.search(r'\d+', crack_time)
+        if numeric_part is not None:
+            numeric_part = int(numeric_part.group())
+        else:
+            numeric_part = 0
+
+        if 'centuries' in crack_time:
+            score = 10
+        elif 'year' in crack_time:
+            score = 4 + (numeric_part / 10)  # Adjust score based on the number of years
+        elif 'month' in crack_time:
+            score = 2 + (numeric_part / 12)  # Adjust score based on the number of months
+        elif 'day' in crack_time:
+            score = 0.5 + (numeric_part / 30)  # Adjust score based on the number of days
+        elif 'hour' in crack_time:
+            score = 0 + (numeric_part / 24)  # Adjust score based on the number of hours
+        else:
+            score = 0
+
+        # Multiply by 10 and round to get a whole number
+        score = round(score * 10)
+        return min(score, 100)
 
     def generate(self): # The password generation is a little complicated to ensure there is at least one character from each selected group
         password_length = self.length_slider.value()
@@ -180,6 +242,10 @@ class PasswordGenerator(QWidget):
             return
 
         password = self.generatepassword(password_length, character_groups)
+
+        if not password:
+            QMessageBox.warning(self, "Warning", "Failed to generate password")
+            return
 
         # Clear the password label
         self.password_label.clear()
@@ -201,6 +267,9 @@ class PasswordGenerator(QWidget):
                 cursor.insertText(char, number_format)
             else:
                 cursor.insertText(char, symbol_format)
+
+        password_strength = self.calculate_password_strength(password)
+        self.password_strength_bar.setValue(password_strength)
 
     def copy(self):
         password = self.password_label.toPlainText()
